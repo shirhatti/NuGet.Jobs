@@ -34,6 +34,7 @@ namespace NuGet.Jobs.Common
         // Storage Argument names
         public const string TargetStorageAccount = "TargetStorageAccount";
         public const string TargetStoragePath = "TargetStoragePath";
+        public const string PrimaryStorageAccount = "PrimaryStorageAccount";
 
         // Catalog argument names
         public const string CatalogStorage = "CatalogStorage";
@@ -61,6 +62,10 @@ namespace NuGet.Jobs.Common
         public const string SourceContainerName = "SourceContainerName";
         public const string DestinationContainerName = "DestinationContainerName";
         public const string CursorBlob = "CursorBlob";
+
+        //Arguments specific to generateSearchRanking job
+        public const string RankingCount = "RankingCount";
+        public const string OutputDirectory = "OutputDirectory";
     }
     /// <summary>
     /// This class is used to retrieve and expose the known azure configuration settings 
