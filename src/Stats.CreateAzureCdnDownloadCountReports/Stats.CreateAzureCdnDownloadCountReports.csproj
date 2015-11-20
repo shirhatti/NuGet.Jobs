@@ -74,7 +74,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DnxDownloadCountData.cs" />
     <Compile Include="DownloadCountData.cs" />
+    <Compile Include="DownloadsPerDnxVersionReport.cs" />
     <Compile Include="DownloadsPerToolVersionReport.cs" />
     <Compile Include="GalleryTotalsData.cs" />
     <Compile Include="GalleryTotalsReport.cs" />

@@ -101,5 +101,8 @@ namespace NuGet.Jobs
 
         // Application Insights
         public const string InstrumentationKey = "InstrumentationKey";
+
+        // Dnx Task
+        public const string DnxTask = "DnxTask";
     }
 }

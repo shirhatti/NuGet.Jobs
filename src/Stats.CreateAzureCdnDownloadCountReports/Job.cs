@@ -21,6 +21,7 @@ namespace Stats.CreateAzureCdnDownloadCountReports
         private SqlConnectionStringBuilder _galleryDatabase;
         private string _statisticsContainerName;
         private string[] _dataContainerNames;
+        private bool _dnxTask;
 
         public Job()
             : base(JobEventSource.Log)
@@ -55,6 +56,9 @@ namespace Stats.CreateAzureCdnDownloadCountReports
                 }
                 _dataContainerNames = containerNames;
 
+                var dnxTask = JobConfigurationManager.TryGetArgument(jobArgsDictionary, JobArgumentNames.DnxTask);
+                bool.TryParse(dnxTask, out _dnxTask);
+
                 return true;
             }
             catch (Exception exception)
@@ -71,38 +75,51 @@ namespace Stats.CreateAzureCdnDownloadCountReports
             {
                 var stopwatch = Stopwatch.StartNew();
 
-                // build downloads.v1.json
-                var targets = new List<StorageContainerTarget>();
-                targets.Add(new StorageContainerTarget(_cloudStorageAccount, _statisticsContainerName));
-                foreach (var dataContainerName in _dataContainerNames)
+                if (_dnxTask)
                 {
-                    targets.Add(new StorageContainerTarget(_dataStorageAccount, dataContainerName));
+                    // build downloads.v1.json
+                    var targets = new List<StorageContainerTarget>();
+                    targets.Add(new StorageContainerTarget(_cloudStorageAccount, _statisticsContainerName));
+                    foreach (var dataContainerName in _dataContainerNames)
+                    {
+                        targets.Add(new StorageContainerTarget(_dataStorageAccount, dataContainerName));
+                    }
+                    var downloadCountReport = new DownloadCountReport(targets, _statisticsDatabase, _galleryDatabase);
+                    await downloadCountReport.Run();
+
+                    stopwatch.Stop();
+                    ApplicationInsights.TrackMetric(DownloadCountReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
+                    ApplicationInsights.TrackReportProcessed(DownloadCountReport.ReportName);
+                    stopwatch.Restart();
+
+
+                    // build stats-totals.json
+                    var galleryTotalsReport = new GalleryTotalsReport(_cloudStorageAccount, _statisticsContainerName, _statisticsDatabase, _galleryDatabase);
+                    await galleryTotalsReport.Run();
+
+                    stopwatch.Stop();
+                    ApplicationInsights.TrackMetric(GalleryTotalsReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
+                    ApplicationInsights.TrackReportProcessed(GalleryTotalsReport.ReportName);
+
+
+                    // build tools.v1.json
+                    var toolsReport = new DownloadsPerToolVersionReport(_cloudStorageAccount, _statisticsContainerName, _statisticsDatabase, _galleryDatabase);
+                    await toolsReport.Run();
+
+                    stopwatch.Stop();
+                    ApplicationInsights.TrackMetric(DownloadsPerToolVersionReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
+                    ApplicationInsights.TrackReportProcessed(DownloadsPerToolVersionReport.ReportName);
+                    stopwatch.Restart();
+
                 }
-                var downloadCountReport = new DownloadCountReport(targets, _statisticsDatabase, _galleryDatabase);
-                await downloadCountReport.Run();
+
+                // build dnx.v1.json
+                var dnxReport = new DownloadsPerDnxVersionReport(_cloudStorageAccount, _statisticsContainerName, _statisticsDatabase, _galleryDatabase);
+                await dnxReport.Run();
 
                 stopwatch.Stop();
-                ApplicationInsights.TrackMetric(DownloadCountReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
-                ApplicationInsights.TrackReportProcessed(DownloadCountReport.ReportName);
-                stopwatch.Restart();
-
-
-                // build stats-totals.json
-                var galleryTotalsReport = new GalleryTotalsReport(_cloudStorageAccount, _statisticsContainerName, _statisticsDatabase, _galleryDatabase);
-                await galleryTotalsReport.Run();
-
-                stopwatch.Stop();
-                ApplicationInsights.TrackMetric(GalleryTotalsReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
-                ApplicationInsights.TrackReportProcessed(GalleryTotalsReport.ReportName);
-
-
-                // build tools.v1.json
-                var toolsReport = new DownloadsPerToolVersionReport(_cloudStorageAccount, _statisticsContainerName, _statisticsDatabase, _galleryDatabase);
-                await toolsReport.Run();
-
-                stopwatch.Stop();
-                ApplicationInsights.TrackMetric(DownloadsPerToolVersionReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
-                ApplicationInsights.TrackReportProcessed(DownloadsPerToolVersionReport.ReportName);
+                ApplicationInsights.TrackMetric(DownloadsPerDnxVersionReport.ReportName + " Generation Time (ms)", stopwatch.ElapsedMilliseconds);
+                ApplicationInsights.TrackReportProcessed(DownloadsPerDnxVersionReport.ReportName);
                 stopwatch.Restart();
 
                 return true;

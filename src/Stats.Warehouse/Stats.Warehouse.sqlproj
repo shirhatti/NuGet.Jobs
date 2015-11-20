@@ -129,4 +129,7 @@
     <Build Include="Programmability\Types\dbo.DnxDimensionTableType.sql" />
     <Build Include="Tables\dbo.Fact_Dnx_Download.sql" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Programmability\Stored Procedures\dbo.SelectTotalDownloadCountsPerDnxVersion.sql" />
+  </ItemGroup>
 </Project>
